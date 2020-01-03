@@ -82,6 +82,14 @@ EOS
       end
     end
 
+    new_metrics["puppet_agent_version{#{common_values.join(',')}}"] = puppet_version
+    new_metrics["puppet_run_status{#{common_values.join(',')}}"] = status
+    new_metrics["puppet_run_transactioncompleted{#{common_values.join(',')}}"] = transaction_completed
+    new_metrics["puppet_run_noop{#{common_values.join(',')}}"] = noop
+    new_metrics["puppet_run_nooppending{#{common_values.join(',')}}"] = noop_pending
+    new_metrics["puppet_run_cachedcatalogstatus{#{common_values.join(',')}}"] = cached_catalog_status
+    new_metrics["puppet_run_starttime{#{common_values.join(',')}}"] = time
+
     epochtime = DateTime.now.new_offset(0).strftime('%Q').to_i / 1000.0
     new_metrics["puppet_report{#{common_values.join(',')}}"] = epochtime
     definitions << <<-EOS
