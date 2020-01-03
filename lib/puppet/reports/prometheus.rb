@@ -44,7 +44,8 @@ Puppet::Reports.register_report(:prometheus) do
 
     common_values = {
       environment: environment,
-      host: host
+      host: host,
+      agentversion: puppet_version,
     }.reduce([]) do |values, extra|
       values + Array("#{extra[0]}=\"#{extra[1]}\"")
     end
@@ -82,13 +83,23 @@ EOS
       end
     end
 
-    new_metrics["puppet_agent_version{#{common_values.join(',')}}"] = puppet_version
-    new_metrics["puppet_run_status{#{common_values.join(',')}}"] = status
-    new_metrics["puppet_run_transactioncompleted{#{common_values.join(',')}}"] = transaction_completed
-    new_metrics["puppet_run_noop{#{common_values.join(',')}}"] = noop
-    new_metrics["puppet_run_nooppending{#{common_values.join(',')}}"] = noop_pending
-    new_metrics["puppet_run_cachedcatalogstatus{#{common_values.join(',')}}"] = cached_catalog_status
-    new_metrics["puppet_run_starttime{#{common_values.join(',')}}"] = time
+    case status
+      when 'failed' then
+        failed = '1'
+        changes = '0'
+      when 'changed' then
+        failed = '0'
+        changes = '1'
+      else
+        failed = '0'
+        changes = '0'
+    end
+    new_metrics["puppet_status{name=\"changes\",#{common_values.join(',')}}"] = changes
+    new_metrics["puppet_status{name=\"failed\",#{common_values.join(',')}}"] = failed
+    definitions << <<-EOS
+# HELP puppet_status Status of puppet run
+# TYPE puppet_status gauge
+EOS
 
     epochtime = DateTime.now.new_offset(0).strftime('%Q').to_i / 1000.0
     new_metrics["puppet_report{#{common_values.join(',')}}"] = epochtime
